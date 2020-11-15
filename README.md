@@ -1,7 +1,6 @@
 <b> Socket Instructions </b>
 
-gcc server.c -o server
-gcc client.c -o client
+gcc server.c -o server\ngcc client.c -o client
 ./server
 ./client
 
