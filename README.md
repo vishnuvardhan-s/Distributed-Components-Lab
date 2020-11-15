@@ -1,8 +1,11 @@
-# Distributed-Components-Lab
-Socket Instructions
-gcc server.c -o server 
+Socket Instructions 
+
+gcc server.c -o server
+
 gcc client.c -o client
+
 ./server
+
 ./client
 
 
