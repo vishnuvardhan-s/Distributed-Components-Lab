@@ -1,4 +1,4 @@
-Socket Instructions 
+<b> Socket Instructions </b>
 
 gcc server.c -o server
 
