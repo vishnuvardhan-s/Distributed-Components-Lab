@@ -1,22 +1,15 @@
 <b> Socket Instructions </b>
-
 gcc server.c -o server <br> gcc client.c -o client <br> ./server <br> ./client
 
-
 <b> RPCGEN Instructions </b>
-
 sudo rpcbind <br> rpcgen -a -C filename.x <br> edit the server and client files <br> make -f Makefile.filename to compile <br>
-./filename_server in one terminal and ./filename_client in another terminal 
-
-<br>
+./filename_server in one terminal and ./filename_client in another terminal <br>
 
 <b> RMI Instructions </b>
-
 javac  *.java <br>
 start rmiregistry <br>
 start java RMI_Server <br>
 java RMI_Client 127.0.0.1 <br>
-
 
 <b> EJB </b>
 <br>
