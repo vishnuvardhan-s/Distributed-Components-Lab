@@ -1,18 +1,17 @@
 <b> Socket Instructions </b> <br>
 gcc server.c -o server <br> gcc client.c -o client <br> ./server <br> ./client
 
-<b> RPCGEN Instructions </b>
+<b> RPCGEN Instructions </b> <br>
 sudo rpcbind <br> rpcgen -a -C filename.x <br> edit the server and client files <br> make -f Makefile.filename to compile <br>
 ./filename_server in one terminal and ./filename_client in another terminal <br>
 
-<b> RMI Instructions </b>
+<b> RMI Instructions </b> <br>
 javac  *.java <br>
 start rmiregistry <br>
 start java RMI_Server <br>
 java RMI_Client 127.0.0.1 <br>
 
-<b> EJB </b>
-<br>
+<b> EJB </b> <br>
 Step 1: Create new Project -> JAVA Class Library <br>
 Step 2: Create new Project -> JAVA EE -> Enterprise Application <br>
 Step 3: Click next and then uncheck Web Application Module and Finish <br> 
