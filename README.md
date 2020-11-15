@@ -1,4 +1,4 @@
-<b> Socket Instructions </b>
+<b> Socket Instructions </b> <br>
 gcc server.c -o server <br> gcc client.c -o client <br> ./server <br> ./client
 
 <b> RPCGEN Instructions </b>
