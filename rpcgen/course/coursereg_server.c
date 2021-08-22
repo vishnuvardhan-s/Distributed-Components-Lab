@@ -5,15 +5,41 @@
  */
 
 #include "coursereg.h"
+#define N 3
 courses c[100];
 int * admit_1_svc(struct arg *argp, struct svc_req *rqstp)
 {
+	strcpy(c[0].name,"physics");
+	strcpy(c[0].faculty,"BSP");
+	c[0].size = 0;
+	strcpy(c[1].name,"chemistry");
+	strcpy(c[1].faculty,"therila");
+	c[1].size = 0;
+	strcpy(c[2].name,"maths");
+	strcpy(c[2].faculty,"YOUTUBE");
+	c[2].size = 0;
 	static int  result;
-
 	/*
 	 * insert server code here
 	 */
-
+	int index = -1;
+	for(int i=0;i<N;i++)
+	{
+		if(strcmp(c[i].name,argp->courseName)==0)
+		{
+			index = i;
+			break;
+		}
+	}
+	if(index==-1)
+	{
+		return -1;
+	}
+	else
+	{
+		strcpy(c[index].students[c[index].size++],argp->studentName);
+	}
+	
 	return &result;
 }
 

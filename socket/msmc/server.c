@@ -2,73 +2,124 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-int PORT;
-int main() {
-	int sockfd, ret;
-	struct sockaddr_in serverAddr;
-	int newSocket;
-	struct sockaddr_in newAddr;
-	socklen_t addr_size;
-	char buffer[1024];
-	pid_t childpid;
-	printf("Enter the port number: ");
-	scanf("%d",&PORT);
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if(sockfd < 0){
-		printf("[-]Error in connection.\n");
-		exit(1);
-	}
-	printf("[+]Server Socket is created.\n");
+#include <netdb.h>
+	
+#define PORT 4950
+#define BUFSIZE 1024
 
-	memset(&serverAddr, '\0', sizeof(serverAddr));
-	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = htons(PORT);
-	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-	ret = bind(sockfd, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
-	if(ret < 0){
-		printf("[-]Error in binding.\n");
-		exit(1);
-	}
-	printf("[+]Bind to port %d\n", PORT);
-
-	if(listen(sockfd, 10) == 0){
-		printf("[+]Listening....\n");
-	}else{
-		printf("[-]Error in binding.\n");
-	}
-
-
-	while(1){
-		newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &addr_size);
-		if(newSocket < 0){
-			exit(1);
-		}
-		printf("Connection accepted from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
-
-		if((childpid = fork()) == 0){
-			close(sockfd);
-			while(1){
-				recv(newSocket, buffer, 1024, 0);
-				if(strcmp(buffer, ":exit") == 0){
-					printf("Disconnected from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
-					break;
-				}else{
-					printf("Client: %s\n", buffer);
-					send(newSocket, buffer, strlen(buffer), 0);
-					bzero(buffer, sizeof(buffer));
-				}
+void send_to_all(int j, int i, int sockfd, int nbytes_recvd, char *recv_buf, fd_set *master)
+{
+	if (FD_ISSET(j, master)){
+		if (j != sockfd && j != i) {
+			if (send(j, recv_buf, nbytes_recvd, 0) == -1) {
+				perror("send");
 			}
 		}
-
 	}
-
-	close(newSocket);
-
-
+}
+		
+void send_recv(int i, fd_set *master, int sockfd, int fdmax)
+{
+	int nbytes_recvd, j;
+	char recv_buf[BUFSIZE], buf[BUFSIZE];
+	
+	if ((nbytes_recvd = recv(i, recv_buf, BUFSIZE, 0)) <= 0) {
+		if (nbytes_recvd == 0) {
+			printf("socket %d hung up\n", i);
+		}else {
+			perror("recv");
+		}
+		close(i);
+		FD_CLR(i, master);
+	}else { 
+	//	printf("%s\n", recv_buf);
+		for(j = 0; j <= fdmax; j++){
+			send_to_all(j, i, sockfd, nbytes_recvd, recv_buf, master );
+		}
+	}	
+}
+		
+void connection_accept(fd_set *master, int *fdmax, int sockfd, struct sockaddr_in *client_addr)
+{
+	socklen_t addrlen;
+	int newsockfd;
+	
+	addrlen = sizeof(struct sockaddr_in);
+	if((newsockfd = accept(sockfd, (struct sockaddr *)client_addr, &addrlen)) == -1) {
+		perror("accept");
+		exit(1);
+	}else {
+		FD_SET(newsockfd, master);
+		if(newsockfd > *fdmax){
+			*fdmax = newsockfd;
+		}
+		printf("new connection from %s on port %d \n",inet_ntoa(client_addr->sin_addr), ntohs(client_addr->sin_port));
+	}
+}
+	
+void connect_request(int *sockfd, struct sockaddr_in *my_addr)
+{
+	int yes = 1;
+		
+	if ((*sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		perror("Socket");
+		exit(1);
+	}
+		
+	my_addr->sin_family = AF_INET;
+	my_addr->sin_port = htons(4950);
+	my_addr->sin_addr.s_addr = INADDR_ANY;
+	memset(my_addr->sin_zero, '\0', sizeof my_addr->sin_zero);
+		
+	if (setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+		perror("setsockopt");
+		exit(1);
+	}
+		
+	if (bind(*sockfd, (struct sockaddr *)my_addr, sizeof(struct sockaddr)) == -1) {
+		perror("Unable to bind");
+		exit(1);
+	}
+	if (listen(*sockfd, 10) == -1) {
+		perror("listen");
+		exit(1);
+	}
+	printf("\nTCPServer Waiting for client on port 4950\n");
+	fflush(stdout);
+}
+int main()
+{
+	fd_set master;
+	fd_set read_fds;
+	int fdmax, i;
+	int sockfd= 0;
+	struct sockaddr_in my_addr, client_addr;
+	
+	FD_ZERO(&master);
+	FD_ZERO(&read_fds);
+	connect_request(&sockfd, &my_addr);
+	FD_SET(sockfd, &master);
+	
+	fdmax = sockfd;
+	while(1){
+		read_fds = master;
+		if(select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1){
+			perror("select");
+			exit(4);
+		}
+		
+		for (i = 0; i <= fdmax; i++){
+			if (FD_ISSET(i, &read_fds)){
+				if (i == sockfd)
+					connection_accept(&master, &fdmax, sockfd, &client_addr);
+				else
+					send_recv(i, &master, sockfd, fdmax);
+			}
+		}
+	}
 	return 0;
 }
